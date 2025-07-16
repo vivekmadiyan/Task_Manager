@@ -7,7 +7,7 @@ const taskSlice = createSlice({
     addTask: (state, action) => {
       const { id, text } = action.payload;
 
-      state.push({
+      state.unshift({
         id: id || Date.now(),
         text,
         completed: false
