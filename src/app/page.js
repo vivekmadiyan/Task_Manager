@@ -1,50 +1,53 @@
 'use client';
 
-import { useState,useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addTask, removeTask } from '../redux/taskSlice';
-import { Trash } from 'lucide-react'; 
-
+import { Trash } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function TaskManager() {
   const [taskInput, setTaskInput] = useState('');
   const dispatch = useDispatch();
   const tasks = useSelector((state) => state.tasks);
 
- const handleAdd = () => {
-  if (taskInput.trim() !== '') {
-    dispatch(addTask({ id: Date.now(), text: taskInput })); 
-  }
-};
-
+  const handleAdd = () => {
+    if (taskInput.trim() !== '') {
+      dispatch(addTask({ id: Date.now(), text: taskInput }));
+      setTaskInput('');
+    }
+  };
 
   const handleRemove = (id) => {
     dispatch(removeTask(id));
   };
-  
 
-  const func=async()=>{
-   try {
+  const func = async () => {
+    try {
       const res = await fetch('https://jsonplaceholder.typicode.com/todos?_limit=5');
       const json = await res.json();
-
       json.forEach((item) => {
-       dispatch(addTask({ id: item.id, text: item.title }));
+        dispatch(addTask({ id: item.id, text: item.title }));
       });
     } catch (err) {
       console.error('Failed to fetch tasks:', err);
     }
-  }
-  
-   useEffect(()=>{
-    func()
-  },[])
+  };
 
+  useEffect(() => {
+    func();
+  }, []);
 
+  // ⚡ Component drops in with bounce effect
   return (
-    <div className="min-h-screen w-full bg-[#121214] flex flex-col items-center">
+    <motion.div
+      initial={{ opacity: 0, y: -50 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: 'spring', stiffness: 100, damping: 12 }}
+      className="min-h-screen w-full bg-[#121214] flex flex-col items-center"
+    >
       {/* Navbar */}
-      <div className="bg-black w-full h-50 sm:h-32  flex justify-center items-center">
+      <div className="bg-black w-full h-50 sm:h-32 flex justify-center items-center">
         <img
           src="/logo.png"
           alt="Logo"
@@ -61,12 +64,18 @@ export default function TaskManager() {
           className="w-full max-w-md px-4 py-2 rounded-md bg-[#2e2e2e] text-white placeholder:text-gray-400 outline-none"
           placeholder="Enter a task..."
         />
-        <button
+        {/* 🟢 Add button with scale + glow */}
+        <motion.button
+          whileHover={{
+            scale: 1.08,
+            boxShadow: '0px 0px 8px rgb(30, 111, 159)',
+          }}
+          whileTap={{ scale: 0.92 }}
           onClick={handleAdd}
-          className="ml-2 px-4 py-2 bg-[#1E6F9F] text-white rounded-md hover:bg-gray-600 transition"
+          className="ml-2 px-4 py-2 bg-[#1E6F9F] text-white rounded-md hover:bg-[#155d82] transition"
         >
           Add
-        </button>
+        </motion.button>
       </div>
 
       {/* Task Section */}
@@ -75,26 +84,32 @@ export default function TaskManager() {
         <div className="w-full h-px bg-white opacity-20" />
 
         <ul className="flex flex-col gap-2 mt-2">
-          {tasks.map((task) => (
-            <li
-              key={task.id}
-              className="flex items-center bg-[#262626] px-4 py-2 rounded-md text-white"
-            >
-              
-              <span className="text-white">{task.text}</span>
-              <button
-                onClick={() => handleRemove(task.id)}
-                className="ml-auto text-red-400 hover:text-red-600 transition"
+          <AnimatePresence>
+            {tasks.map((task) => (
+              <motion.li
+                key={task.id}
+                initial={{ opacity: 0, x: -40, scale: 0.9 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: 50, scale: 0.8 }}
+                transition={{ type: 'spring', stiffness: 150, damping: 14 }}
+                className="flex items-center bg-[#262626] px-4 py-2 rounded-md text-white"
               >
-                <Trash size={20} />
-              </button>
-            </li>
-          ))}
-        </ul>
-          
-      </div>
-           
+                <span className="text-white">{task.text}</span>
 
-    </div> 
-  )
+                {/* 🔥 Trash icon with hover wiggle and tap scale */}
+                <motion.button
+                  whileHover={{ rotate: [0, -10, 10, -10, 0] }}
+                  whileTap={{ scale: 0.8 }}
+                  onClick={() => handleRemove(task.id)}
+                  className="ml-auto text-red-400 hover:text-red-600 transition"
+                >
+                  <Trash size={20} />
+                </motion.button>
+              </motion.li>
+            ))}
+          </AnimatePresence>
+        </ul>
+      </div>
+    </motion.div>
+  );
 }
